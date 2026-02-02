@@ -78,6 +78,15 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
   -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
   -x
 
-# Install Claude
+# Install Claude Code
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
+
+# Install OpenSpec (spec-driven development for AI coding assistants)
+RUN npm install -g @fission-ai/openspec@latest
+
+# Install Beads (memory/issue tracking for coding agents)
+# Create .local/bin and add to PATH before running installer
+ENV PATH=$PATH:/home/node/.local/bin
+RUN mkdir -p /home/node/.local/bin && \
+    curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
 
