@@ -66,7 +66,8 @@ func ListCommitsWithNotes() ([]string, error) {
 
 // PushNotes pushes notes to the remote
 func PushNotes(remote string) error {
-	cmd := exec.Command("git", "push", remote, NotesRef)
+	// Use --no-verify to prevent pre-push hook from triggering recursively
+	cmd := exec.Command("git", "push", "--no-verify", remote, NotesRef)
 	return cmd.Run()
 }
 

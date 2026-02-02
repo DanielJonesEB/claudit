@@ -15,8 +15,6 @@ var _ = Describe("End-to-End Store Flow", func() {
 	var local, remote *testutil.GitRepo
 
 	BeforeEach(func() {
-		Expect(testutil.BuildBinary()).To(Succeed())
-
 		var err error
 		local, remote, err = testutil.NewGitRepoWithRemote()
 		Expect(err).NotTo(HaveOccurred())
@@ -32,7 +30,6 @@ var _ = Describe("End-to-End Store Flow", func() {
 		if remote != nil {
 			remote.Cleanup()
 		}
-		testutil.CleanupBinary()
 	})
 
 	It("full flow: init repo, simulate Claude hook, verify note stored, push/pull", func() {

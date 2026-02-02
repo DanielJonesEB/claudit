@@ -15,8 +15,6 @@ var _ = Describe("Sync Command", func() {
 	var local, remote *testutil.GitRepo
 
 	BeforeEach(func() {
-		Expect(testutil.BuildBinary()).To(Succeed())
-
 		var err error
 		local, remote, err = testutil.NewGitRepoWithRemote()
 		Expect(err).NotTo(HaveOccurred())
@@ -34,7 +32,6 @@ var _ = Describe("Sync Command", func() {
 		if remote != nil {
 			remote.Cleanup()
 		}
-		testutil.CleanupBinary()
 	})
 
 	Describe("claudit sync push", func() {

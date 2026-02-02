@@ -15,8 +15,6 @@ var _ = Describe("Store Command", func() {
 	var repo *testutil.GitRepo
 
 	BeforeEach(func() {
-		Expect(testutil.BuildBinary()).To(Succeed())
-
 		var err error
 		repo, err = testutil.NewGitRepo()
 		Expect(err).NotTo(HaveOccurred())
@@ -30,7 +28,6 @@ var _ = Describe("Store Command", func() {
 		if repo != nil {
 			repo.Cleanup()
 		}
-		testutil.CleanupBinary()
 	})
 
 	Describe("with git commit command", func() {

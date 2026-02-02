@@ -10,14 +10,6 @@ import (
 )
 
 var _ = Describe("CLI Foundation", func() {
-	BeforeEach(func() {
-		Expect(testutil.BuildBinary()).To(Succeed())
-	})
-
-	AfterEach(func() {
-		testutil.CleanupBinary()
-	})
-
 	Describe("claudit with no arguments", func() {
 		It("displays help text", func() {
 			stdout, _, err := testutil.RunClaudit()
@@ -51,8 +43,6 @@ var _ = Describe("Init Command", func() {
 	var repo *testutil.GitRepo
 
 	BeforeEach(func() {
-		Expect(testutil.BuildBinary()).To(Succeed())
-
 		var err error
 		repo, err = testutil.NewGitRepo()
 		Expect(err).NotTo(HaveOccurred())
@@ -62,7 +52,6 @@ var _ = Describe("Init Command", func() {
 		if repo != nil {
 			repo.Cleanup()
 		}
-		testutil.CleanupBinary()
 	})
 
 	Describe("claudit init in a git repository", func() {
