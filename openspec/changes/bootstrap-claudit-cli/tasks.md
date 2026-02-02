@@ -87,9 +87,10 @@
 
 - [ ] **3.2** Implement git hooks installation
   - Add to `internal/git/repo.go` or new file
-  - Install pre-push, post-merge, post-checkout hooks
+  - Install pre-push → `claudit sync push`
+  - Install post-merge, post-checkout → `claudit sync pull`
   - Handle existing hooks (append, don't overwrite)
-  - Verify: Unit tests
+  - Verify: Hooks are executable and call claudit commands
 
 - [ ] **3.3** Implement init command
   - Create `cmd/init.go`
@@ -110,13 +111,14 @@
   - Create `cmd/sync.go`
   - `sync push` - push notes to origin
   - `sync pull` - fetch notes from origin
-  - Verify: Command structure in place
+  - Verify: Commands execute git push/fetch for notes ref
 
-- [ ] **3.6** Add acceptance tests for sync command
+- [ ] **3.6** Add acceptance tests for sync and git hooks
   - Create `testutil/remote.go` - create local bare repos as remotes
   - Test: `claudit sync push` pushes notes to bare repo remote
   - Test: `claudit sync pull` fetches notes from bare repo remote
   - Test: Verify notes round-trip through push/pull
+  - Test: Git hooks invoke `claudit sync` commands (not inline bash)
   - Verify: `ginkgo tests/acceptance` passes
 
 ## Phase 4: Session Resume

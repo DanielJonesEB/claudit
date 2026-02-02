@@ -48,26 +48,8 @@ The init command MUST configure Claude Code's hook system correctly.
 - Then existing settings are preserved
 - And the PostToolUse hook is added or updated
 
-### Requirement: Git hooks for automatic sync
-The init command MUST install git hooks to sync notes with push/pull operations.
-
-#### Scenario: Pre-push hook installed
-- Given `claudit init` has been run
-- When examining `.git/hooks/pre-push`
-- Then it contains logic to push `refs/notes/claude-conversations`
-
-#### Scenario: Post-merge hook installed
-- Given `claudit init` has been run
-- When examining `.git/hooks/post-merge`
-- Then it contains logic to fetch `refs/notes/claude-conversations`
-
-#### Scenario: Post-checkout hook installed
-- Given `claudit init` has been run
-- When examining `.git/hooks/post-checkout`
-- Then it contains logic to fetch `refs/notes/claude-conversations`
-
-### Requirement: Manual sync commands
-The CLI MUST provide manual fallback commands for syncing git notes.
+### Requirement: Sync commands
+The CLI MUST provide commands for syncing git notes with remotes.
 
 #### Scenario: Push notes to remote
 - Given the repository has a remote configured
@@ -78,3 +60,21 @@ The CLI MUST provide manual fallback commands for syncing git notes.
 - Given the repository has a remote configured
 - When the user runs `claudit sync pull`
 - Then claudit fetches `refs/notes/claude-conversations` from origin
+
+### Requirement: Git hooks for automatic sync
+The init command MUST install git hooks that invoke claudit sync commands.
+
+#### Scenario: Pre-push hook installed
+- Given `claudit init` has been run
+- When examining `.git/hooks/pre-push`
+- Then it calls `claudit sync push`
+
+#### Scenario: Post-merge hook installed
+- Given `claudit init` has been run
+- When examining `.git/hooks/post-merge`
+- Then it calls `claudit sync pull`
+
+#### Scenario: Post-checkout hook installed
+- Given `claudit init` has been run
+- When examining `.git/hooks/post-checkout`
+- Then it calls `claudit sync pull`

@@ -40,9 +40,16 @@ Claudit is a single-binary Go CLI that integrates with Claude Code via hooks to 
 5. Checkout commit and launch `claude --resume`
 
 ### Sync Flow
-Git notes require explicit push/fetch. Handled via:
-- Git hooks (pre-push, post-merge, post-checkout) for automatic sync
-- Manual `claudit sync push|pull` commands as fallback
+Git notes require explicit push/fetch. The `claudit sync` commands are the implementation:
+- `claudit sync push` - pushes notes to remote
+- `claudit sync pull` - fetches notes from remote
+
+Git hooks installed by `claudit init` simply invoke these commands:
+- `pre-push` → `claudit sync push`
+- `post-merge` → `claudit sync pull`
+- `post-checkout` → `claudit sync pull`
+
+Users can also run sync commands manually when needed (e.g., initial clone, troubleshooting).
 
 ## Key Decisions
 
