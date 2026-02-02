@@ -30,12 +30,12 @@ type ContentBlock struct {
 
 // TranscriptEntry represents a single entry in the JSONL transcript
 type TranscriptEntry struct {
-	UUID                    string         `json:"uuid"`
-	ParentUUID              string         `json:"parentUuid,omitempty"`
-	Type                    MessageType    `json:"type"`
-	Timestamp               string         `json:"timestamp,omitempty"`
-	Message                 *Message       `json:"message,omitempty"`
-	SourceToolAssistantUUID string         `json:"sourceToolAssistantUUID,omitempty"`
+	UUID                    string          `json:"uuid"`
+	ParentUUID              string          `json:"parentUuid,omitempty"`
+	Type                    MessageType     `json:"type"`
+	Timestamp               string          `json:"timestamp,omitempty"`
+	Message                 *Message        `json:"message,omitempty"`
+	SourceToolAssistantUUID string          `json:"sourceToolAssistantUUID,omitempty"`
 	Raw                     json.RawMessage `json:"-"`
 }
 
@@ -66,13 +66,8 @@ func ParseTranscript(r io.Reader) (*Transcript, error) {
 		}
 
 		var entry TranscriptEntry
-		if err := json.Unmarshal(line, &entry); err != nil {
-			// Preserve raw JSON for unknown types
-			entry.Raw = json.RawMessage(line)
-		} else {
-			entry.Raw = json.RawMessage(line)
-		}
-
+		json.Unmarshal(line, &entry)
+		entry.Raw = json.RawMessage(line)
 		entries = append(entries, entry)
 	}
 

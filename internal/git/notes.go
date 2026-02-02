@@ -1,7 +1,6 @@
 package git
 
 import (
-	"bytes"
 	"os/exec"
 	"strings"
 )
@@ -12,22 +11,13 @@ const NotesRef = "refs/notes/claude-conversations"
 // AddNote adds a note to a commit
 func AddNote(commitSHA string, content []byte) error {
 	cmd := exec.Command("git", "notes", "--ref", NotesRef, "add", "-f", "-m", string(content), commitSHA)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	return nil
+	return cmd.Run()
 }
 
 // GetNote retrieves a note from a commit
 func GetNote(commitSHA string) ([]byte, error) {
 	cmd := exec.Command("git", "notes", "--ref", NotesRef, "show", commitSHA)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	return output, nil
+	return cmd.Output()
 }
 
 // HasNote checks if a commit has a conversation note

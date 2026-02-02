@@ -9,7 +9,7 @@ import (
 
 // GitRepo represents a temporary git repository for testing
 type GitRepo struct {
-	Path    string
+	Path     string
 	ExtraEnv []string // Extra environment variables for commands
 }
 
