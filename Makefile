@@ -1,4 +1,4 @@
-.PHONY: build test acceptance clean install
+.PHONY: build test acceptance integration clean install
 
 GO := CGO_ENABLED=0 go
 BINARY := claudit
@@ -11,6 +11,12 @@ test:
 
 acceptance: build
 	$(GO) test ./tests/acceptance/... -v
+
+# Integration test with real Claude Code CLI
+# Requires: ANTHROPIC_API_KEY environment variable
+# Skip with: SKIP_CLAUDE_INTEGRATION=1
+integration: build
+	CLAUDIT_BINARY=$(PWD)/$(BINARY) $(GO) test ./tests/integration/... -v -timeout 120s
 
 all: test acceptance
 
