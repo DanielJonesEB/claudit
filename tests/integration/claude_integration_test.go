@@ -12,9 +12,14 @@ import (
 
 // TestClaudeCodeIntegration runs an end-to-end test with actual Claude Code CLI.
 // This test requires:
-// - ANTHROPIC_API_KEY environment variable set
+// - ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN environment variable set
 // - Claude Code CLI installed and in PATH
 // - claudit binary built
+//
+// Authentication options:
+// - ANTHROPIC_API_KEY: API key from console.anthropic.com (recommended for CI)
+// - CLAUDE_CODE_OAUTH_TOKEN: OAuth token from `claude setup-token` (Pro/Max subscribers)
+//   Note: OAuth token also requires ~/.claude.json with {"hasCompletedOnboarding": true}
 //
 // Skip with: SKIP_CLAUDE_INTEGRATION=1 go test ./tests/integration/...
 func TestClaudeCodeIntegration(t *testing.T) {
@@ -24,8 +29,15 @@ func TestClaudeCodeIntegration(t *testing.T) {
 	}
 
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
-	if apiKey == "" {
-		t.Skip("ANTHROPIC_API_KEY not set - skipping integration test")
+	oauthToken := os.Getenv("CLAUDE_CODE_OAUTH_TOKEN")
+	if apiKey == "" && oauthToken == "" {
+		t.Skip("Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN set - skipping integration test")
+	}
+
+	if oauthToken != "" && apiKey == "" {
+		t.Log("Using CLAUDE_CODE_OAUTH_TOKEN authentication (Pro/Max subscription)")
+	} else {
+		t.Log("Using ANTHROPIC_API_KEY authentication")
 	}
 
 	// Check Claude CLI is available
@@ -116,9 +128,15 @@ func TestClaudeCodeIntegration(t *testing.T) {
 	)
 	claudeCmd.Dir = tmpDir
 	claudeCmd.Env = append(os.Environ(),
-		"ANTHROPIC_API_KEY="+apiKey,
 		"PATH="+os.Getenv("PATH")+":"+filepath.Dir(clauditPath),
 	)
+	// Add authentication - API key takes precedence if both are set
+	if apiKey != "" {
+		claudeCmd.Env = append(claudeCmd.Env, "ANTHROPIC_API_KEY="+apiKey)
+	}
+	if oauthToken != "" {
+		claudeCmd.Env = append(claudeCmd.Env, "CLAUDE_CODE_OAUTH_TOKEN="+oauthToken)
+	}
 
 	// Set timeout
 	done := make(chan error, 1)
