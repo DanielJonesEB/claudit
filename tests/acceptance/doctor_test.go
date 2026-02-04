@@ -42,7 +42,7 @@ var _ = Describe("Doctor Command", func() {
 			stdout, _, _ := testutil.RunClauditInDir(repo.Path, "doctor")
 			Expect(stdout).To(ContainSubstring("Claudit Doctor"))
 			Expect(stdout).To(ContainSubstring("Checking git repository... OK"))
-			Expect(stdout).To(ContainSubstring("Found correct hook configuration"))
+			Expect(stdout).To(ContainSubstring("Found PostToolUse hook configuration"))
 			Expect(stdout).To(ContainSubstring("All git hooks installed"))
 		})
 

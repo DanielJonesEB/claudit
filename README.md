@@ -28,8 +28,12 @@ claudit init --notes-ref=refs/notes/claude-conversations  # Use custom ref
 Configures:
 - Git notes ref selection (default or custom namespace)
 - Git settings for notes visibility (displayRef, rewriteRef)
-- Claude Code's PostToolUse hook to capture conversations on commit
-- Git hooks (pre-push, post-merge, post-checkout) for automatic note syncing
+- Claude Code hooks:
+  - PostToolUse hook to capture conversations when Claude commits
+  - SessionStart/SessionEnd hooks to track active sessions
+- Git hooks:
+  - pre-push, post-merge, post-checkout for automatic note syncing
+  - post-commit for capturing manual commits during active sessions
 
 **Notes ref options:**
 - `refs/notes/commits` (default) - Standard git notes ref, works with `git notes show HEAD` and `git log`
@@ -38,6 +42,22 @@ Configures:
 ### `claudit store` - Capture conversation (automatic)
 
 Called automatically by Claude Code hook when you commit. Compresses and stores the conversation as a Git Note.
+
+**Two capture modes:**
+- **PostToolUse hook** - Triggers when Claude Code runs `git commit`
+- **post-commit hook** - Captures conversations for manual commits made during active sessions
+
+The dual-hook approach ensures conversations are captured whether Claude makes the commit or you do.
+
+```bash
+claudit store           # Called automatically by PostToolUse hook
+claudit store --manual  # Called by post-commit git hook for manual commits
+```
+
+**Manual commit capture** works by tracking the active session:
+- When a Claude session starts, `claudit session-start` records the session state
+- Manual commits during the session trigger `claudit store --manual`
+- Both hooks can fire for the same commit - duplicates are detected and skipped (idempotent)
 
 ### `claudit list` - Show commits with conversations
 ```bash
@@ -81,11 +101,15 @@ claudit sync push --remote upstream  # Push to different remote
 
 ## How It Works
 
-1. **Hook Integration** - When Claude Code runs a git commit, the PostToolUse hook triggers `claudit store`
-2. **Compression** - The conversation transcript is gzip compressed and base64 encoded
-3. **Storage** - Stored as a Git Note on your configured ref (default: `refs/notes/commits`)
-4. **Sync** - Git hooks automatically sync notes when you push/pull
-5. **Resume** - Restores session files to Claude's expected location and launches with `--resume`
+1. **Hook Integration** - Conversations are captured automatically:
+   - When Claude Code runs `git commit`, the PostToolUse hook triggers `claudit store`
+   - For manual commits during a Claude session, the post-commit git hook triggers `claudit store --manual`
+2. **Session Tracking** - SessionStart/SessionEnd hooks track the active Claude session in `.claudit/active-session.json`
+3. **Compression** - The conversation transcript is gzip compressed and base64 encoded
+4. **Storage** - Stored as a Git Note on your configured ref (default: `refs/notes/commits`)
+5. **Duplicate Prevention** - If both hooks fire for the same commit, the second one detects the duplicate and skips
+6. **Sync** - Git hooks automatically sync notes when you push/pull
+7. **Resume** - Restores session files to Claude's expected location and launches with `--resume`
 
 ### Storage Format
 

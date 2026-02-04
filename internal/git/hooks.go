@@ -14,6 +14,7 @@ const (
 	HookPrePush      HookType = "pre-push"
 	HookPostMerge    HookType = "post-merge"
 	HookPostCheckout HookType = "post-checkout"
+	HookPostCommit   HookType = "post-commit"
 )
 
 // clauditMarker identifies claudit-managed hook sections
@@ -93,6 +94,7 @@ func InstallAllHooks(gitDir string) error {
 		HookPrePush:      "claudit sync push",
 		HookPostMerge:    "claudit sync pull",
 		HookPostCheckout: "claudit sync pull",
+		HookPostCommit:   "claudit store --manual",
 	}
 
 	for hookType, command := range hooks {

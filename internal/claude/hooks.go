@@ -21,7 +21,9 @@ type HookCmd struct {
 
 // HooksConfig represents the nested hooks configuration
 type HooksConfig struct {
-	PostToolUse []Hook `json:"PostToolUse,omitempty"`
+	PostToolUse  []Hook `json:"PostToolUse,omitempty"`
+	SessionStart []Hook `json:"SessionStart,omitempty"`
+	SessionEnd   []Hook `json:"SessionEnd,omitempty"`
 }
 
 // Settings represents Claude Code's settings.local.json structure
@@ -72,7 +74,7 @@ func WriteSettings(claudeDir string, settings *Settings) error {
 	}
 
 	// Only include hooks if there are any configured
-	if len(settings.Hooks.PostToolUse) > 0 {
+	if len(settings.Hooks.PostToolUse) > 0 || len(settings.Hooks.SessionStart) > 0 || len(settings.Hooks.SessionEnd) > 0 {
 		output["hooks"] = settings.Hooks
 	}
 
@@ -118,4 +120,52 @@ func AddClauditHook(settings *Settings) {
 
 	// Add new hook
 	settings.Hooks.PostToolUse = append(settings.Hooks.PostToolUse, clauditHook)
+}
+
+// AddSessionHooks adds or updates the SessionStart and SessionEnd hooks in settings
+func AddSessionHooks(settings *Settings) {
+	sessionStartHook := Hook{
+		Matcher: "",
+		Hooks: []HookCmd{
+			{
+				Type:    "command",
+				Command: "claudit session-start",
+				Timeout: 5,
+			},
+		},
+	}
+
+	sessionEndHook := Hook{
+		Matcher: "",
+		Hooks: []HookCmd{
+			{
+				Type:    "command",
+				Command: "claudit session-end",
+				Timeout: 5,
+			},
+		},
+	}
+
+	// Add or update SessionStart hook
+	settings.Hooks.SessionStart = addOrUpdateHook(settings.Hooks.SessionStart, sessionStartHook, "claudit session-start")
+
+	// Add or update SessionEnd hook
+	settings.Hooks.SessionEnd = addOrUpdateHook(settings.Hooks.SessionEnd, sessionEndHook, "claudit session-end")
+}
+
+// addOrUpdateHook adds or updates a hook in the list based on command
+func addOrUpdateHook(hooks []Hook, newHook Hook, command string) []Hook {
+	for i, hook := range hooks {
+		if len(hook.Hooks) > 0 {
+			for _, h := range hook.Hooks {
+				if h.Command == command {
+					// Already exists, update it
+					hooks[i] = newHook
+					return hooks
+				}
+			}
+		}
+	}
+	// Add new hook
+	return append(hooks, newHook)
 }

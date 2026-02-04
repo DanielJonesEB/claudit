@@ -78,12 +78,13 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	claude.AddClauditHook(settings)
+	claude.AddSessionHooks(settings)
 
 	if err := claude.WriteSettings(claudeDir, settings); err != nil {
 		return fmt.Errorf("failed to write Claude settings: %w", err)
 	}
 
-	fmt.Println("✓ Configured Claude PostToolUse hook")
+	fmt.Println("✓ Configured Claude hooks (PostToolUse, SessionStart, SessionEnd)")
 
 	// Install git hooks
 	gitDir, err := git.EnsureGitDir()
@@ -95,7 +96,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to install git hooks: %w", err)
 	}
 
-	fmt.Println("✓ Installed git hooks (pre-push, post-merge, post-checkout)")
+	fmt.Println("✓ Installed git hooks (pre-push, post-merge, post-checkout, post-commit)")
 
 	// Check if claudit is in PATH
 	if _, err := exec.LookPath("claudit"); err != nil {

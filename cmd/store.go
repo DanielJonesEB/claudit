@@ -9,6 +9,7 @@ import (
 
 	"github.com/DanielJonesEB/claudit/internal/claude"
 	"github.com/DanielJonesEB/claudit/internal/git"
+	"github.com/DanielJonesEB/claudit/internal/session"
 	"github.com/DanielJonesEB/claudit/internal/storage"
 	"github.com/spf13/cobra"
 )
@@ -23,21 +24,35 @@ type HookInput struct {
 	} `json:"tool_input"`
 }
 
+var manualFlag bool
+
 var storeCmd = &cobra.Command{
 	Use:   "store",
 	Short: "Store conversation from Claude Code hook",
 	Long: `Reads PostToolUse hook JSON from stdin and stores the conversation
 as a Git Note if a git commit was detected.
 
-This command is designed to be called by Claude Code's PostToolUse hook.`,
+This command is designed to be called by Claude Code's PostToolUse hook.
+
+With --manual flag, discovers the active session and stores its conversation
+for the most recent commit. Used by the post-commit git hook.`,
 	RunE: runStore,
 }
 
 func init() {
+	storeCmd.Flags().BoolVar(&manualFlag, "manual", false, "Manual mode: discover session from active session file or recent sessions")
 	rootCmd.AddCommand(storeCmd)
 }
 
 func runStore(cmd *cobra.Command, args []string) error {
+	if manualFlag {
+		return runManualStore()
+	}
+	return runHookStore()
+}
+
+// runHookStore handles the PostToolUse hook mode
+func runHookStore() error {
 	// Read hook input from stdin
 	input, err := io.ReadAll(os.Stdin)
 	if err != nil {
@@ -62,15 +77,60 @@ func runStore(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Beyond this point, we're processing a git commit in a git repo.
-	// All failures are critical and should return errors.
+	return storeConversation(hook.SessionID, hook.TranscriptPath)
+}
 
-	// Read and parse transcript
-	if hook.TranscriptPath == "" {
-		return fmt.Errorf("no transcript path provided in hook data")
+// runManualStore handles the manual (post-commit hook) mode
+func runManualStore() error {
+	// Verify we're in a git repository
+	if !git.IsInsideWorkTree() {
+		return nil // Exit silently - not in a git repo
 	}
 
-	transcriptData, err := os.ReadFile(hook.TranscriptPath)
+	// Get project path
+	projectPath, err := git.GetRepoRoot()
+	if err != nil {
+		return nil // Exit silently
+	}
+
+	// Discover active session
+	activeSession, err := session.DiscoverSession(projectPath)
+	if err != nil || activeSession == nil {
+		// No session found - exit silently (don't disrupt git workflow)
+		return nil
+	}
+
+	return storeConversation(activeSession.SessionID, activeSession.TranscriptPath)
+}
+
+// storeConversation stores a conversation for the HEAD commit with duplicate detection
+func storeConversation(sessionID, transcriptPath string) error {
+	// Get HEAD commit
+	headCommit, err := git.GetHeadCommit()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD commit: %w", err)
+	}
+
+	// Check for existing note (duplicate detection)
+	if git.HasNote(headCommit) {
+		existingNote, err := git.GetNote(headCommit)
+		if err == nil {
+			existing, err := storage.UnmarshalStoredConversation(existingNote)
+			if err == nil && existing.SessionID == sessionID {
+				// Same session - already stored (idempotent)
+				logInfo("conversation already stored for commit %s", headCommit[:8])
+				return nil
+			}
+			// Different session - will overwrite
+		}
+	}
+
+	// Read and parse transcript
+	if transcriptPath == "" {
+		return fmt.Errorf("no transcript path provided")
+	}
+
+	transcriptData, err := os.ReadFile(transcriptPath)
 	if err != nil {
 		return fmt.Errorf("failed to read transcript: %w", err)
 	}
@@ -83,14 +143,10 @@ func runStore(cmd *cobra.Command, args []string) error {
 	// Get git context
 	projectPath, _ := git.GetRepoRoot()
 	branch, _ := git.GetCurrentBranch()
-	headCommit, err := git.GetHeadCommit()
-	if err != nil {
-		return fmt.Errorf("failed to get HEAD commit: %w", err)
-	}
 
 	// Create stored conversation
 	stored, err := storage.NewStoredConversation(
-		hook.SessionID,
+		sessionID,
 		projectPath,
 		branch,
 		transcript.MessageCount(),

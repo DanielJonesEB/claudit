@@ -102,23 +102,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 						hasErrors = true
 					} else {
 						// Check for claudit store command
-						hookList, ok := postToolUse.([]interface{})
-						foundClaudit := false
-						if ok {
-							for _, h := range hookList {
-								hookMap, _ := h.(map[string]interface{})
-								hookCmds, _ := hookMap["hooks"].([]interface{})
-								for _, hc := range hookCmds {
-									hcMap, _ := hc.(map[string]interface{})
-									if cmd, ok := hcMap["command"].(string); ok {
-										if strings.Contains(cmd, "claudit store") {
-											foundClaudit = true
-											break
-										}
-									}
-								}
-							}
-						}
+						foundClaudit := hasClauditCommand(postToolUse, "claudit store")
 						if !foundClaudit {
 							fmt.Println("FAIL")
 							fmt.Println("  'claudit store' hook not found in PostToolUse")
@@ -126,7 +110,25 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 							hasErrors = true
 						} else {
 							fmt.Println("OK")
-							fmt.Printf("  Found correct hook configuration\n")
+							fmt.Printf("  Found PostToolUse hook configuration\n")
+						}
+
+						// Check for SessionStart hook
+						sessionStart, hasSessionStart := hooks["SessionStart"]
+						if !hasSessionStart || !hasClauditCommand(sessionStart, "claudit session-start") {
+							fmt.Println("  WARN: Missing SessionStart hook (manual commit capture won't work)")
+							fmt.Println("        Run 'claudit init' to add")
+						} else {
+							fmt.Println("  Found SessionStart hook")
+						}
+
+						// Check for SessionEnd hook
+						sessionEnd, hasSessionEnd := hooks["SessionEnd"]
+						if !hasSessionEnd || !hasClauditCommand(sessionEnd, "claudit session-end") {
+							fmt.Println("  WARN: Missing SessionEnd hook (manual commit capture won't work)")
+							fmt.Println("        Run 'claudit init' to add")
+						} else {
+							fmt.Println("  Found SessionEnd hook")
 						}
 					}
 				}
@@ -147,7 +149,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 			hasErrors = true
 		} else {
 			missingHooks := []string{}
-			for _, hook := range []string{"pre-push", "post-merge", "post-checkout"} {
+			for _, hook := range []string{"pre-push", "post-merge", "post-checkout", "post-commit"} {
 				hookPath := filepath.Join(gitDir, "hooks", hook)
 				data, err := os.ReadFile(hookPath)
 				if err != nil {
@@ -177,4 +179,25 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("All checks passed! Claudit is properly configured.")
 	return nil
+}
+
+// hasClauditCommand checks if a hook list contains a specific claudit command
+func hasClauditCommand(hookConfig interface{}, command string) bool {
+	hookList, ok := hookConfig.([]interface{})
+	if !ok {
+		return false
+	}
+	for _, h := range hookList {
+		hookMap, _ := h.(map[string]interface{})
+		hookCmds, _ := hookMap["hooks"].([]interface{})
+		for _, hc := range hookCmds {
+			hcMap, _ := hc.(map[string]interface{})
+			if cmd, ok := hcMap["command"].(string); ok {
+				if strings.Contains(cmd, command) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
