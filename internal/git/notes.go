@@ -39,6 +39,7 @@ func HasNote(commitSHA string) bool {
 }
 
 // ListCommitsWithNotes returns a list of commit SHAs that have conversation notes
+// sorted in reverse chronological order (matching git log)
 func ListCommitsWithNotes() ([]string, error) {
 	ref := GetNotesRef()
 	cmd := exec.Command("git", "notes", "--ref", ref, "list")
@@ -51,7 +52,8 @@ func ListCommitsWithNotes() ([]string, error) {
 		return nil, err
 	}
 
-	var commits []string
+	// Build a set of commits with notes
+	commitSet := make(map[string]bool)
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 	for _, line := range lines {
 		if line == "" {
@@ -60,7 +62,30 @@ func ListCommitsWithNotes() ([]string, error) {
 		// Format: "note_sha commit_sha"
 		parts := strings.Fields(line)
 		if len(parts) >= 2 {
-			commits = append(commits, parts[1])
+			commitSet[parts[1]] = true
+		}
+	}
+
+	if len(commitSet) == 0 {
+		return nil, nil
+	}
+
+	// Use git rev-list to sort commits in reverse chronological order
+	// --all ensures we see all branches, --topo-order maintains parent-child relationships
+	cmd = exec.Command("git", "rev-list", "--all", "--topo-order")
+	output, err = cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter to only commits that have notes, preserving git's order
+	var commits []string
+	for _, sha := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+		if sha == "" {
+			continue
+		}
+		if commitSet[sha] {
+			commits = append(commits, sha)
 		}
 	}
 

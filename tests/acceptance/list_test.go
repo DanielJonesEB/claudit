@@ -3,6 +3,7 @@ package acceptance_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -80,6 +81,33 @@ var _ = Describe("List Command", func() {
 			// Should show both commits
 			lines := countLines(stdout)
 			Expect(lines).To(BeNumerically(">=", 2))
+		})
+
+		It("lists commits in reverse chronological order (matching git log)", func() {
+			// Store conversation on first commit (Initial commit)
+			firstSHA := storeConversation("session-order-1")
+
+			// Create second commit with conversation
+			Expect(repo.WriteFile("file2.txt", "content")).To(Succeed())
+			Expect(repo.Commit("Second commit")).To(Succeed())
+			secondSHA := storeConversation("session-order-2")
+
+			// Create third commit with conversation
+			Expect(repo.WriteFile("file3.txt", "more content")).To(Succeed())
+			Expect(repo.Commit("Third commit")).To(Succeed())
+			thirdSHA := storeConversation("session-order-3")
+
+			stdout, _, err := testutil.RunClauditInDir(repo.Path, "list")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Should show newest first (third, second, first) - matching git log order
+			lines := strings.Split(strings.TrimSpace(stdout), "\n")
+			Expect(len(lines)).To(BeNumerically(">=", 3))
+
+			// Verify order: third (newest) should come before second, which comes before first
+			Expect(lines[0]).To(ContainSubstring(thirdSHA[:7]))
+			Expect(lines[1]).To(ContainSubstring(secondSHA[:7]))
+			Expect(lines[2]).To(ContainSubstring(firstSHA[:7]))
 		})
 	})
 
