@@ -1,28 +1,16 @@
-# Claudit
+# claudit
 
-Save your Claude Code conversations with your commits. Resume them later. Share them with your team.
+Automatically save Claude Code conversations as Git Notes on every commit.
+
+```bash
+claudit init
+```
+
+Now work with `claude` as you would normally. Whenever you or Claude Code commit, the conversation since the last commit will be attached to that commit as a Git Note.
 
 ## Why?
 
-When you're coding with Claude, the conversation is as valuable as the code. Claudit stores that conversation right in your Git repo, so you can:
-
-- **Resume where you left off** — Pick up any past session, even on a different machine
-- **Share context** — Your team sees not just the code, but the reasoning behind it
-- **Browse history** — Web UI to explore conversations across your commit history
-
-## Quick Start
-
-```bash
-# Install
-go install github.com/DanielJonesEB/claudit@latest
-# Or: make build
-
-# Set up your repo (one time)
-cd your-project
-claudit init
-
-# That's it. Now when you work with Claude and commit, conversations are saved automatically.
-```
+In order to understand _how_ and _why_ a commit was made, we need to see the conversation that led to it.
 
 ## Usage
 
@@ -39,17 +27,10 @@ claudit resume abc123    # By commit SHA
 claudit resume HEAD~3    # By git ref
 ```
 
-**Browse in your browser:**
+**View in your browser:**
 
 ```bash
 claudit serve
-```
-
-**Sync with your team:**
-
-```bash
-git push   # Conversations sync automatically
-git pull   # Fetches conversations from teammates
 ```
 
 ## How It Works
