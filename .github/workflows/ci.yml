@@ -134,6 +134,11 @@ jobs:
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "New version: ${NEW_VERSION}"
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
       - name: Create and push tag
         run: |
           NEW_VERSION="${{ steps.calc_version.outputs.new_version }}"
@@ -142,3 +147,12 @@ jobs:
           git tag -a "${NEW_VERSION}" -m "Release ${NEW_VERSION}"
           git push origin "${NEW_VERSION}"
           echo "Created and pushed tag: ${NEW_VERSION}"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
