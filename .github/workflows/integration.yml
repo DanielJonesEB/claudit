@@ -33,9 +33,4 @@ jobs:
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           CLAUDIT_BINARY: ${{ github.workspace }}/claudit
-        run: |
-          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
-            echo "CLAUDE_CODE_OAUTH_TOKEN not set, skipping integration tests"
-            exit 0
-          fi
-          go test ./tests/integration/... -v -timeout 120s
+        run: go test ./tests/integration/... -v -timeout 120s
