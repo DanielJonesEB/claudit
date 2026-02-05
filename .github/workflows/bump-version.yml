@@ -4,11 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       bump_type:
-        description: 'Version bump type'
+        description: 'Version bump type (patch is automatic on every push to main)'
         required: true
         type: choice
         options:
-          - patch
           - minor
           - major
 
@@ -51,9 +50,6 @@ jobs:
             minor)
               MINOR=$((MINOR + 1))
               PATCH=0
-              ;;
-            patch)
-              PATCH=$((PATCH + 1))
               ;;
           esac
 

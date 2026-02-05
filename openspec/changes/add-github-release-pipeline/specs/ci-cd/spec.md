@@ -27,20 +27,26 @@ The project SHALL have automated testing via GitHub Actions on every PR and push
 - **THEN** binaries are built for 5 platforms (darwin/amd64, darwin/arm64, linux/amd64, linux/arm64, windows/amd64)
 - **AND** all builds complete successfully
 
-### Requirement: Version Bumping
-The project SHALL provide a manual workflow to bump semantic versions.
+### Requirement: Continuous Delivery
+The project SHALL automatically release on every push to main using semantic versioning.
 
-#### Scenario: Patch version bump
-- **WHEN** a maintainer triggers the bump-version workflow with "patch"
-- **THEN** the patch version increments (e.g., v2.2.0 -> v2.2.1)
+#### Scenario: Auto patch bump on push to main
+- **WHEN** code is pushed to the main branch
+- **AND** CI passes
+- **THEN** the patch version is automatically incremented (e.g., v2.2.0 -> v2.2.1)
 - **AND** an annotated git tag is created and pushed
+- **AND** a GitHub Release is created with binaries
 
-#### Scenario: Minor version bump
+#### Scenario: Skip release for version tags
+- **WHEN** a push to main is a version tag push (from bump workflow)
+- **THEN** the auto-release workflow does not create a duplicate tag
+
+#### Scenario: Manual minor version bump
 - **WHEN** a maintainer triggers the bump-version workflow with "minor"
-- **THEN** the minor version increments and patch resets (e.g., v2.2.1 -> v2.3.0)
+- **THEN** the minor version increments and patch resets (e.g., v2.2.5 -> v2.3.0)
 - **AND** an annotated git tag is created and pushed
 
-#### Scenario: Major version bump
+#### Scenario: Manual major version bump
 - **WHEN** a maintainer triggers the bump-version workflow with "major"
 - **THEN** the major version increments and minor/patch reset (e.g., v2.3.0 -> v3.0.0)
 - **AND** an annotated git tag is created and pushed

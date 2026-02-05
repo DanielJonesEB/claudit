@@ -23,8 +23,8 @@ Claudit is a Go CLI tool distributed via `go install`. Adding GitHub releases en
 **Rationale:** Industry standard for Go releases. Handles cross-compilation, checksums, changelog, and archives in one tool. Eliminates ~200 lines of custom scripting.
 
 ### Version Bumping Strategy
-**Decision:** Manual trigger with dropdown (patch/minor/major)
-**Rationale:** Automatic bumping on every merge creates noise. Manual trigger gives control while automating the tedious parts. Developer clicks "Run workflow" -> picks bump type -> tag created -> release flows.
+**Decision:** Continuous delivery with auto patch bump; manual trigger for major/minor only
+**Rationale:** Every push to main should release automatically (CD). Patch versions bump automatically. Major/minor bumps are rare and intentional, so they use a manual workflow to signal breaking changes or new features.
 
 ### Integration Test Secret
 **Decision:** Use `CLAUDE_CODE_OAUTH_TOKEN` (not `ANTHROPIC_API_KEY`)
