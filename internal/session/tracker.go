@@ -114,8 +114,8 @@ func DiscoverSession(projectPath string) (*ActiveSession, error) {
 	}
 
 	if active != nil {
-		// Validate project path matches
-		if active.ProjectPath == projectPath && IsSessionActive(active) {
+		// Validate project path matches (use pathsEqual to handle symlinks)
+		if pathsEqual(active.ProjectPath, projectPath) && IsSessionActive(active) {
 			return active, nil
 		}
 	}
@@ -151,8 +151,8 @@ func findRecentSessionFromIndex(index *claude.SessionsIndex, projectPath string)
 	for i := range index.Entries {
 		entry := &index.Entries[i]
 
-		// Validate project path matches
-		if entry.ProjectPath != projectPath {
+		// Validate project path matches (use pathsEqual to handle symlinks)
+		if !pathsEqual(entry.ProjectPath, projectPath) {
 			continue
 		}
 
@@ -256,4 +256,20 @@ func getActiveSessionPath() (string, error) {
 		return "", fmt.Errorf("failed to get project root: %w", err)
 	}
 	return filepath.Join(root, ".claudit", activeSessionFile), nil
+}
+
+// pathsEqual compares two paths after resolving symlinks.
+// This handles macOS where /tmp is a symlink to /private/tmp.
+func pathsEqual(a, b string) bool {
+	// Try to resolve symlinks for both paths
+	resolvedA, errA := filepath.EvalSymlinks(a)
+	resolvedB, errB := filepath.EvalSymlinks(b)
+
+	// If both resolved successfully, compare resolved paths
+	if errA == nil && errB == nil {
+		return resolvedA == resolvedB
+	}
+
+	// Fall back to direct comparison if resolution fails
+	return a == b
 }
