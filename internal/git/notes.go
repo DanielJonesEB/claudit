@@ -3,46 +3,34 @@ package git
 import (
 	"os/exec"
 	"strings"
-
-	"github.com/DanielJonesEB/claudit/internal/config"
 )
 
-// GetNotesRef returns the configured git notes ref
-func GetNotesRef() string {
-	cfg, err := config.Read()
-	if err != nil {
-		// Fallback to default ref on error
-		return config.DefaultNotesRef
-	}
-	return cfg.NotesRef
-}
+// NotesRef is the git notes ref used to store conversation notes.
+// A custom ref keeps git log clean and avoids collisions with other notes.
+const NotesRef = "refs/notes/claude-conversations"
 
 // AddNote adds a note to a commit
 func AddNote(commitSHA string, content []byte) error {
-	ref := GetNotesRef()
-	cmd := exec.Command("git", "notes", "--ref", ref, "add", "-f", "-m", string(content), commitSHA)
+	cmd := exec.Command("git", "notes", "--ref", NotesRef, "add", "-f", "-m", string(content), commitSHA)
 	return cmd.Run()
 }
 
 // GetNote retrieves a note from a commit
 func GetNote(commitSHA string) ([]byte, error) {
-	ref := GetNotesRef()
-	cmd := exec.Command("git", "notes", "--ref", ref, "show", commitSHA)
+	cmd := exec.Command("git", "notes", "--ref", NotesRef, "show", commitSHA)
 	return cmd.Output()
 }
 
 // HasNote checks if a commit has a conversation note
 func HasNote(commitSHA string) bool {
-	ref := GetNotesRef()
-	cmd := exec.Command("git", "notes", "--ref", ref, "show", commitSHA)
+	cmd := exec.Command("git", "notes", "--ref", NotesRef, "show", commitSHA)
 	return cmd.Run() == nil
 }
 
 // ListCommitsWithNotes returns a list of commit SHAs that have conversation notes
 // sorted in reverse chronological order (matching git log)
 func ListCommitsWithNotes() ([]string, error) {
-	ref := GetNotesRef()
-	cmd := exec.Command("git", "notes", "--ref", ref, "list")
+	cmd := exec.Command("git", "notes", "--ref", NotesRef, "list")
 	output, err := cmd.Output()
 	if err != nil {
 		// No notes exist yet - this is not an error
@@ -94,15 +82,13 @@ func ListCommitsWithNotes() ([]string, error) {
 
 // PushNotes pushes notes to the remote
 func PushNotes(remote string) error {
-	ref := GetNotesRef()
 	// Use --no-verify to prevent pre-push hook from triggering recursively
-	cmd := exec.Command("git", "push", "--no-verify", remote, ref)
+	cmd := exec.Command("git", "push", "--no-verify", remote, NotesRef)
 	return cmd.Run()
 }
 
 // FetchNotes fetches notes from the remote
 func FetchNotes(remote string) error {
-	ref := GetNotesRef()
-	cmd := exec.Command("git", "fetch", remote, ref+":"+ref)
+	cmd := exec.Command("git", "fetch", remote, NotesRef+":"+NotesRef)
 	return cmd.Run()
 }
