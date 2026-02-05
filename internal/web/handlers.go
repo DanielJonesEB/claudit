@@ -43,6 +43,13 @@ type GraphNode struct {
 	Message         string   `json:"message"`
 }
 
+// writeJSONError writes a JSON error response with the given status code.
+func writeJSONError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+}
+
 // handleCommits returns a list of commits with conversation metadata
 func (s *Server) handleCommits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -158,36 +165,34 @@ func (s *Server) handleCommitDetail(w http.ResponseWriter, r *http.Request) {
 
 	// Check for conversation note
 	if !git.HasNote(fullSHA) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "no conversation found"})
+		writeJSONError(w, http.StatusNotFound, "no conversation found")
 		return
 	}
 
 	// Get note content
 	noteContent, err := git.GetNote(fullSHA)
 	if err != nil {
-		http.Error(w, "Failed to read conversation", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to read conversation")
 		return
 	}
 
 	stored, err := storage.UnmarshalStoredConversation(noteContent)
 	if err != nil {
-		http.Error(w, "Failed to parse conversation", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to parse conversation")
 		return
 	}
 
 	// Decompress transcript
 	transcriptData, err := stored.GetTranscript()
 	if err != nil {
-		http.Error(w, "Failed to decompress transcript", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to decompress transcript")
 		return
 	}
 
 	// Parse transcript
 	transcript, err := claude.ParseTranscript(strings.NewReader(string(transcriptData)))
 	if err != nil {
-		http.Error(w, "Failed to parse transcript", http.StatusInternalServerError)
+		writeJSONError(w, http.StatusInternalServerError, "failed to parse transcript")
 		return
 	}
 
@@ -277,61 +282,45 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 	// Check for uncommitted changes
 	hasChanges, err := git.HasUncommittedChanges()
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to check working directory"})
+		writeJSONError(w, http.StatusInternalServerError, "failed to check working directory")
 		return
 	}
 
 	if hasChanges {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusConflict)
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"error": "uncommitted changes in working directory",
-		})
+		writeJSONError(w, http.StatusConflict, "uncommitted changes in working directory")
 		return
 	}
 
 	// Resolve the reference
 	fullSHA, err := git.ResolveRef(sha)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid commit reference"})
+		writeJSONError(w, http.StatusBadRequest, "invalid commit reference")
 		return
 	}
 
 	// Check for conversation note
 	if !git.HasNote(fullSHA) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "no conversation found"})
+		writeJSONError(w, http.StatusNotFound, "no conversation found")
 		return
 	}
 
 	// Get note content
 	noteContent, err := git.GetNote(fullSHA)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to read conversation"})
+		writeJSONError(w, http.StatusInternalServerError, "failed to read conversation")
 		return
 	}
 
 	stored, err := storage.UnmarshalStoredConversation(noteContent)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to parse conversation"})
+		writeJSONError(w, http.StatusInternalServerError, "failed to parse conversation")
 		return
 	}
 
 	// Decompress transcript
 	transcriptData, err := stored.GetTranscript()
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": "failed to decompress transcript"})
+		writeJSONError(w, http.StatusInternalServerError, "failed to decompress transcript")
 		return
 	}
 
@@ -345,17 +334,13 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 		"Restored from web UI",
 	)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("failed to restore session: %v", err)})
+		writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("failed to restore session: %v", err))
 		return
 	}
 
 	// Checkout commit
 	if err := git.Checkout(fullSHA); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("failed to checkout: %v", err)})
+		writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("failed to checkout: %v", err))
 		return
 	}
 
@@ -363,9 +348,7 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 	claudeCmd := exec.Command("claude", "--resume", stored.SessionID)
 	claudeCmd.Dir = s.repoDir
 	if err := claudeCmd.Start(); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("failed to launch claude: %v", err)})
+		writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("failed to launch claude: %v", err))
 		return
 	}
 
