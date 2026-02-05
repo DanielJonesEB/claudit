@@ -1,8 +1,6 @@
-name: Integration Tests
+name: Integration Tests (Scheduled)
 
 on:
-  push:
-    branches: [master]
   schedule:
     # Run weekly on Monday at 6 AM UTC
     - cron: '0 6 * * 1'
@@ -12,8 +10,6 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    # Skip on fork PRs (no secrets available)
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
 
@@ -23,8 +19,7 @@ jobs:
           go-version: '1.21'
 
       - name: Install Claude Code CLI
-        run: |
-          npm install -g @anthropic-ai/claude-code
+        run: npm install -g @anthropic-ai/claude-code
 
       - name: Build binary
         run: CGO_ENABLED=0 go build -o claudit .
