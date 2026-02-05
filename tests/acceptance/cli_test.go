@@ -147,7 +147,7 @@ var _ = Describe("Init Command", func() {
 
 			_, stderr, err := testutil.RunClauditInDir(tmpDir, "init", "--notes-ref=refs/notes/commits")
 			Expect(err).To(HaveOccurred())
-			Expect(stderr).To(ContainSubstring("not a git repository"))
+			Expect(stderr).To(ContainSubstring("not inside a git repository"))
 		})
 	})
 })

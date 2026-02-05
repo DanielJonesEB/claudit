@@ -53,7 +53,7 @@ func TestClaudeCodeIntegration(t *testing.T) {
 		clauditPath = filepath.Join(getWorkspaceRoot(), "claudit")
 	}
 	if _, err := os.Stat(clauditPath); err != nil {
-		t.Fatalf("claudit binary not found at %s - run 'make build' first", clauditPath)
+		t.Fatalf("claudit binary not found at %s - run 'go build' or use SKIP_CLAUDE_INTEGRATION=1", clauditPath)
 	}
 
 	// Create temporary test directory
@@ -381,12 +381,16 @@ func TestClaudeCodeIntegration_MissingClaudit(t *testing.T) {
 // TestStoreCommandFailureHandling tests that the store command returns errors instead of exiting silently
 // This test should FAIL with the current implementation (bug) and PASS after we fix it
 func TestStoreCommandFailureHandling(t *testing.T) {
+	if os.Getenv("SKIP_CLAUDE_INTEGRATION") == "1" {
+		t.Skip("SKIP_CLAUDE_INTEGRATION=1 is set")
+	}
+
 	clauditPath := os.Getenv("CLAUDIT_BINARY")
 	if clauditPath == "" {
 		clauditPath = filepath.Join(getWorkspaceRoot(), "claudit")
 	}
 	if _, err := os.Stat(clauditPath); err != nil {
-		t.Fatalf("claudit binary not found at %s", clauditPath)
+		t.Fatalf("claudit binary not found at %s - run 'go build' or use SKIP_CLAUDE_INTEGRATION=1", clauditPath)
 	}
 
 	// Create temporary git repo

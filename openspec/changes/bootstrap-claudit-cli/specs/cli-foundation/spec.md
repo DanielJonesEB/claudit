@@ -30,7 +30,7 @@ The `claudit init` command MUST configure a git repository for conversation capt
 #### Scenario: Initialize outside a git repository
 - Given the user is not in a git repository
 - When the user runs `claudit init`
-- Then claudit exits with error "not a git repository"
+- Then claudit exits with error "not inside a git repository"
 
 ### Requirement: PostToolUse hook configuration
 The init command MUST configure Claude Code's hook system correctly.
