@@ -21,7 +21,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
@@ -37,7 +37,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Run unit tests
         run: go test ./internal/...
@@ -47,6 +47,21 @@ jobs:
 
       - name: Run acceptance tests
         run: go test ./tests/acceptance/... -v
+
+  browser-test:
+    name: Browser Tests
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run browser tests
+        run: go test ./tests/browser/... -v -timeout 60s
 
   build:
     name: Build
@@ -70,7 +85,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Build
         env:
@@ -92,7 +107,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
@@ -137,7 +152,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Create and push tag
         run: |

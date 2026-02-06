@@ -1,4 +1,4 @@
-.PHONY: build test acceptance integration clean install fmt lint
+.PHONY: build test acceptance integration browser clean install fmt lint
 
 GO := CGO_ENABLED=0 go
 BINARY := claudit
@@ -17,6 +17,9 @@ test: lint
 
 acceptance: build
 	$(GO) test ./tests/acceptance/... -v
+
+browser: build
+	$(GO) test ./tests/browser/... -v -timeout 60s
 
 # Integration test with real Claude Code CLI
 # Requires: ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN environment variable

@@ -42,6 +42,9 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("/api/resume/", s.handleResume)
 }
 
+// Handler returns the HTTP handler for the server.
+func (s *Server) Handler() http.Handler { return s.mux }
+
 // Start starts the web server
 func (s *Server) Start(openBrowser bool) error {
 	addr := fmt.Sprintf("127.0.0.1:%d", s.port)
