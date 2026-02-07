@@ -28,6 +28,15 @@ func GetStoredConversation(commitSHA string) (*StoredConversation, error) {
 	return stored, nil
 }
 
+// ParseTranscript decompresses the stored transcript and parses it into a Transcript.
+func (sc *StoredConversation) ParseTranscript() (*claude.Transcript, error) {
+	data, err := sc.GetTranscript()
+	if err != nil {
+		return nil, err
+	}
+	return claude.ParseTranscript(strings.NewReader(string(data)))
+}
+
 // FindParentConversationBoundary finds the most recent parent commit with a conversation
 // and returns its SHA and the last entry UUID from that conversation.
 // Returns empty strings if no parent conversation is found or session IDs differ.
@@ -58,12 +67,7 @@ func FindParentConversationBoundary(commitSHA, currentSessionID string) (parentS
 			return "", ""
 		}
 
-		transcriptData, err := stored.GetTranscript()
-		if err != nil {
-			continue
-		}
-
-		transcript, err := claude.ParseTranscript(strings.NewReader(string(transcriptData)))
+		transcript, err := stored.ParseTranscript()
 		if err != nil {
 			continue
 		}

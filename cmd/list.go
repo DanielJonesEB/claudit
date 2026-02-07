@@ -63,13 +63,8 @@ func runList(cmd *cobra.Command, args []string) error {
 		}
 
 		// Get conversation metadata
-		noteContent, err := git.GetNote(commitSHA)
-		if err != nil {
-			continue
-		}
-
-		stored, err := storage.UnmarshalStoredConversation(noteContent)
-		if err != nil {
+		stored, err := storage.GetStoredConversation(commitSHA)
+		if err != nil || stored == nil {
 			continue
 		}
 

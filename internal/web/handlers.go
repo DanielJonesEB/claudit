@@ -114,10 +114,8 @@ func (s *Server) handleCommits(w http.ResponseWriter, r *http.Request) {
 
 		// Get message count if has conversation
 		if hasConv {
-			if noteContent, err := git.GetNote(commit.SHA); err == nil {
-				if stored, err := storage.UnmarshalStoredConversation(noteContent); err == nil {
-					info.MessageCount = stored.MessageCount
-				}
+			if stored, err := storage.GetStoredConversation(commit.SHA); err == nil && stored != nil {
+				info.MessageCount = stored.MessageCount
 			}
 		}
 
@@ -163,34 +161,19 @@ func (s *Server) handleCommitDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check for conversation note
-	if !git.HasNote(fullSHA) {
-		writeJSONError(w, http.StatusNotFound, "no conversation found")
-		return
-	}
-
-	// Get note content
-	noteContent, err := git.GetNote(fullSHA)
+	// Get stored conversation
+	stored, err := storage.GetStoredConversation(fullSHA)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to read conversation")
 		return
 	}
-
-	stored, err := storage.UnmarshalStoredConversation(noteContent)
-	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "failed to parse conversation")
-		return
-	}
-
-	// Decompress transcript
-	transcriptData, err := stored.GetTranscript()
-	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "failed to decompress transcript")
+	if stored == nil {
+		writeJSONError(w, http.StatusNotFound, "no conversation found")
 		return
 	}
 
 	// Parse transcript
-	transcript, err := claude.ParseTranscript(strings.NewReader(string(transcriptData)))
+	transcript, err := stored.ParseTranscript()
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to parse transcript")
 		return
@@ -298,26 +281,18 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check for conversation note
-	if !git.HasNote(fullSHA) {
-		writeJSONError(w, http.StatusNotFound, "no conversation found")
-		return
-	}
-
-	// Get note content
-	noteContent, err := git.GetNote(fullSHA)
+	// Get stored conversation
+	stored, err := storage.GetStoredConversation(fullSHA)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to read conversation")
 		return
 	}
-
-	stored, err := storage.UnmarshalStoredConversation(noteContent)
-	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, "failed to parse conversation")
+	if stored == nil {
+		writeJSONError(w, http.StatusNotFound, "no conversation found")
 		return
 	}
 
-	// Decompress transcript
+	// Decompress transcript for restore
 	transcriptData, err := stored.GetTranscript()
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to decompress transcript")

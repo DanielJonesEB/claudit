@@ -61,22 +61,13 @@ func runResume(cmd *cobra.Command, args []string) error {
 
 	cli.LogDebug("resume: resolved to commit %s", commitSHA[:8])
 
-	// Check if the commit has a conversation note
-	if !git.HasNote(commitSHA) {
-		return fmt.Errorf("no conversation found for commit %s", commitSHA[:8])
-	}
-
 	// Read the stored conversation
-	noteContent, err := git.GetNote(commitSHA)
+	stored, err := storage.GetStoredConversation(commitSHA)
 	if err != nil {
-		return fmt.Errorf("could not read conversation note: %w", err)
+		return fmt.Errorf("could not read conversation: %w", err)
 	}
-
-	cli.LogDebug("resume: note size is %d bytes", len(noteContent))
-
-	stored, err := storage.UnmarshalStoredConversation(noteContent)
-	if err != nil {
-		return fmt.Errorf("could not parse stored conversation: %w", err)
+	if stored == nil {
+		return fmt.Errorf("no conversation found for commit %s", commitSHA[:8])
 	}
 
 	cli.LogDebug("resume: session=%s branch=%s messages=%d", stored.SessionID, stored.GitBranch, stored.MessageCount)

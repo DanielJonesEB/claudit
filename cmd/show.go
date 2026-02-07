@@ -56,31 +56,17 @@ func runShow(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("could not resolve reference '%s': not a valid commit", ref)
 	}
 
-	// Check if the commit has a conversation
-	if !git.HasNote(fullSHA) {
-		return fmt.Errorf("no conversation found for commit %s", fullSHA[:7])
-	}
-
-	// Get the note content
-	noteContent, err := git.GetNote(fullSHA)
+	// Get the stored conversation
+	stored, err := storage.GetStoredConversation(fullSHA)
 	if err != nil {
 		return fmt.Errorf("could not read conversation: %w", err)
 	}
-
-	// Parse the stored conversation
-	stored, err := storage.UnmarshalStoredConversation(noteContent)
-	if err != nil {
-		return fmt.Errorf("could not parse conversation: %w", err)
-	}
-
-	// Decompress the transcript
-	transcriptData, err := stored.GetTranscript()
-	if err != nil {
-		return fmt.Errorf("could not decompress conversation: %w", err)
+	if stored == nil {
+		return fmt.Errorf("no conversation found for commit %s", fullSHA[:7])
 	}
 
 	// Parse the transcript
-	transcript, err := claude.ParseTranscript(strings.NewReader(string(transcriptData)))
+	transcript, err := stored.ParseTranscript()
 	if err != nil {
 		return fmt.Errorf("could not parse transcript: %w", err)
 	}
