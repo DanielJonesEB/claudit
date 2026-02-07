@@ -1,6 +1,6 @@
 # claudit
 
-Automatically save Claude Code conversations as Git Notes on every commit.
+Automatically save Claude Code conversations as Git Notes on every commit. Claude. Audit. See what we did there? 🥁
 
 ## Install
 
