@@ -407,7 +407,7 @@ verify_installation() {
         echo ""
         echo "Get started:"
         echo "  cd your-project"
-        echo "  $BINARY_NAME store"
+        echo "  $BINARY_NAME init"
         echo ""
         return 0
     else
