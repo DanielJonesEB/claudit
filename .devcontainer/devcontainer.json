@@ -9,6 +9,9 @@
     },
     "dockerfile": "Dockerfile"
   },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
   "containerEnv": {
     "CHROME_BIN": "/usr/local/bin/chromium",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
@@ -51,7 +54,7 @@
   ],
   "name": "Claude Code Sandbox",
   "remoteUser": "node",
-  "runArgs": [],
+  "runArgs": ["--privileged"],
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated"
 }

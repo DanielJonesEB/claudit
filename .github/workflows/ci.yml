@@ -63,6 +63,21 @@ jobs:
       - name: Run browser tests
         run: go test ./tests/browser/... -v -timeout 60s
 
+  install-test:
+    name: Install Script Test
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run install script test
+        run: go test ./tests/install/... -v -timeout 120s
+
   build:
     name: Build
     runs-on: ubuntu-latest

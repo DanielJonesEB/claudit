@@ -1,4 +1,4 @@
-.PHONY: build test acceptance integration browser clean install fmt lint
+.PHONY: build test acceptance integration browser install-test clean install fmt lint
 
 GO := CGO_ENABLED=0 go
 BINARY := claudit
@@ -26,6 +26,9 @@ browser: build
 # Requires: Claude Code CLI in PATH
 integration: build
 	CLAUDIT_BINARY=$(PWD)/$(BINARY) $(GO) test ./tests/integration/... -v -timeout 120s
+
+install-test:
+	$(GO) test ./tests/install/... -v -timeout 120s
 
 all: test acceptance
 
