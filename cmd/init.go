@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/DanielJonesEB/claudit/internal/claude"
+	"github.com/DanielJonesEB/claudit/internal/cli"
 	"github.com/DanielJonesEB/claudit/internal/git"
 	"github.com/spf13/cobra"
 )
@@ -39,6 +40,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Configure git settings for notes visibility
+	cli.LogDebug("init: configuring git settings for notes ref %s", git.NotesRef)
 	if err := configureGitSettings(git.NotesRef); err != nil {
 		return fmt.Errorf("failed to configure git settings: %w", err)
 	}
@@ -47,6 +49,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println("✓ Configured git notes settings (displayRef, rewriteRef)")
 
 	// Configure Claude hooks
+	cli.LogDebug("init: configuring Claude hooks")
 	claudeDir := filepath.Join(repoRoot, ".claude")
 	settings, err := claude.ReadSettings(claudeDir)
 	if err != nil {
@@ -63,6 +66,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println("✓ Configured Claude hooks (PostToolUse, SessionStart, SessionEnd)")
 
 	// Install git hooks
+	cli.LogDebug("init: installing git hooks")
 	gitDir, err := git.EnsureGitDir()
 	if err != nil {
 		return fmt.Errorf("failed to find git directory: %w", err)

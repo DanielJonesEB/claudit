@@ -3,6 +3,14 @@ package cli
 import (
 	"fmt"
 	"os"
+	"sync"
+
+	"github.com/DanielJonesEB/claudit/internal/config"
+)
+
+var (
+	debugOnce    sync.Once
+	debugEnabled bool
 )
 
 // LogWarning prints a warning message to stderr with the claudit prefix
@@ -13,4 +21,18 @@ func LogWarning(format string, args ...interface{}) {
 // LogInfo prints an info message to stderr with the claudit prefix
 func LogInfo(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "claudit: "+format+"\n", args...)
+}
+
+// LogDebug prints a debug message to stderr if debug logging is enabled
+// in .claudit/config. The config is read once per process invocation.
+func LogDebug(format string, args ...interface{}) {
+	debugOnce.Do(func() {
+		cfg, err := config.Read()
+		if err == nil {
+			debugEnabled = cfg.Debug
+		}
+	})
+	if debugEnabled {
+		fmt.Fprintf(os.Stderr, "claudit: debug: "+format+"\n", args...)
+	}
 }

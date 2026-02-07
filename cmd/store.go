@@ -52,13 +52,18 @@ func runStore(cmd *cobra.Command, args []string) error {
 
 // runHookStore handles the PostToolUse hook mode
 func runHookStore() error {
+	cli.LogDebug("store: reading hook input from stdin")
 	var hook HookInput
 	if err := cli.ReadHookInput(&hook); err != nil {
+		cli.LogDebug("store: failed to read hook input: %v", err)
 		return nil // Exit silently to not disrupt workflow
 	}
 
+	cli.LogDebug("store: tool=%s command=%q session=%s", hook.ToolName, hook.ToolInput.Command, hook.SessionID)
+
 	// Check if this is a git commit command
 	if hook.ToolName != "Bash" || !isGitCommitCommand(hook.ToolInput.Command) {
+		cli.LogDebug("store: not a git commit command, skipping")
 		return nil // Exit silently for non-commit commands
 	}
 
@@ -73,24 +78,32 @@ func runHookStore() error {
 
 // runManualStore handles the manual (post-commit hook) mode
 func runManualStore() error {
+	cli.LogDebug("store: manual mode")
+
 	// Verify we're in a git repository
 	if !git.IsInsideWorkTree() {
+		cli.LogDebug("store: not inside a git repository, skipping")
 		return nil // Exit silently - not in a git repo
 	}
 
 	// Get project path
 	projectPath, err := git.GetRepoRoot()
 	if err != nil {
+		cli.LogDebug("store: failed to get repo root: %v", err)
 		return nil // Exit silently
 	}
+
+	cli.LogDebug("store: discovering active session in %s", projectPath)
 
 	// Discover active session
 	activeSession, err := session.DiscoverSession(projectPath)
 	if err != nil || activeSession == nil {
+		cli.LogDebug("store: no active session found (err=%v)", err)
 		// No session found - exit silently (don't disrupt git workflow)
 		return nil
 	}
 
+	cli.LogDebug("store: found session %s", activeSession.SessionID)
 	return storeConversation(activeSession.SessionID, activeSession.TranscriptPath)
 }
 
@@ -102,8 +115,11 @@ func storeConversation(sessionID, transcriptPath string) error {
 		return fmt.Errorf("failed to get HEAD commit: %w", err)
 	}
 
+	cli.LogDebug("store: HEAD commit is %s", headCommit[:8])
+
 	// Check for existing note (duplicate detection)
 	if git.HasNote(headCommit) {
+		cli.LogDebug("store: existing note found for %s, checking for duplicate", headCommit[:8])
 		existingNote, err := git.GetNote(headCommit)
 		if err == nil {
 			existing, err := storage.UnmarshalStoredConversation(existingNote)
@@ -112,6 +128,7 @@ func storeConversation(sessionID, transcriptPath string) error {
 				cli.LogInfo("conversation already stored for commit %s", headCommit[:8])
 				return nil
 			}
+			cli.LogDebug("store: different session, will overwrite existing note")
 			// Different session - will overwrite
 		}
 	}
@@ -121,10 +138,14 @@ func storeConversation(sessionID, transcriptPath string) error {
 		return fmt.Errorf("no transcript path provided")
 	}
 
+	cli.LogDebug("store: reading transcript from %s", transcriptPath)
+
 	transcriptData, err := os.ReadFile(transcriptPath)
 	if err != nil {
 		return fmt.Errorf("failed to read transcript: %w", err)
 	}
+
+	cli.LogDebug("store: transcript size is %d bytes", len(transcriptData))
 
 	transcript, err := claude.ParseTranscript(strings.NewReader(string(transcriptData)))
 	if err != nil {
@@ -134,6 +155,8 @@ func storeConversation(sessionID, transcriptPath string) error {
 	// Get git context
 	projectPath, _ := git.GetRepoRoot()
 	branch, _ := git.GetCurrentBranch()
+
+	cli.LogDebug("store: project=%s branch=%s messages=%d", projectPath, branch, transcript.MessageCount())
 
 	// Create stored conversation
 	stored, err := storage.NewStoredConversation(
@@ -152,6 +175,8 @@ func storeConversation(sessionID, transcriptPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal conversation: %w", err)
 	}
+
+	cli.LogDebug("store: note size is %d bytes", len(noteContent))
 
 	if err := git.AddNote(headCommit, noteContent); err != nil {
 		return fmt.Errorf("failed to add git note: %w", err)

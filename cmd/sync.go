@@ -41,6 +41,8 @@ func runSyncPush(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	cli.LogDebug("sync push: pushing notes to remote %s", syncRemote)
+
 	if err := git.PushNotes(syncRemote); err != nil {
 		// Don't fail if there are no notes to push or remote doesn't exist
 		cli.LogWarning("could not push notes: %v", err)
@@ -55,6 +57,8 @@ func runSyncPull(cmd *cobra.Command, args []string) error {
 	if err := git.RequireGitRepo(); err != nil {
 		return err
 	}
+
+	cli.LogDebug("sync pull: fetching notes from remote %s", syncRemote)
 
 	if err := git.FetchNotes(syncRemote); err != nil {
 		// Don't fail if there are no notes to fetch or remote doesn't exist

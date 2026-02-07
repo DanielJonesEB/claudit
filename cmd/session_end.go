@@ -28,10 +28,14 @@ func init() {
 }
 
 func runSessionEnd(cmd *cobra.Command, args []string) error {
+	cli.LogDebug("session-end: reading hook input")
 	var hook SessionEndInput
 	if err := cli.ReadHookInput(&hook); err != nil {
+		cli.LogDebug("session-end: failed to read hook input: %v", err)
 		return nil // Exit silently to not disrupt workflow
 	}
+
+	cli.LogDebug("session-end: session=%s reason=%s", hook.SessionID, hook.Reason)
 
 	// Clear active session file
 	if err := session.ClearActiveSession(); err != nil {

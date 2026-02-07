@@ -29,10 +29,14 @@ func init() {
 }
 
 func runSessionStart(cmd *cobra.Command, args []string) error {
+	cli.LogDebug("session-start: reading hook input")
 	var hook SessionStartInput
 	if err := cli.ReadHookInput(&hook); err != nil {
+		cli.LogDebug("session-start: failed to read hook input: %v", err)
 		return nil // Exit silently to not disrupt workflow
 	}
+
+	cli.LogDebug("session-start: session=%s cwd=%s transcript=%s", hook.SessionID, hook.Cwd, hook.TranscriptPath)
 
 	// Validate required fields
 	if hook.SessionID == "" || hook.TranscriptPath == "" {

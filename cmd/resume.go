@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/DanielJonesEB/claudit/internal/claude"
+	"github.com/DanielJonesEB/claudit/internal/cli"
 	"github.com/DanielJonesEB/claudit/internal/git"
 	"github.com/DanielJonesEB/claudit/internal/storage"
 	"github.com/spf13/cobra"
@@ -44,6 +45,8 @@ func init() {
 func runResume(cmd *cobra.Command, args []string) error {
 	ref := args[0]
 
+	cli.LogDebug("resume: resolving ref %s", ref)
+
 	// Verify we're in a git repository
 	if err := git.RequireGitRepo(); err != nil {
 		return err
@@ -54,6 +57,8 @@ func runResume(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("could not resolve commit: %s", ref)
 	}
+
+	cli.LogDebug("resume: resolved to commit %s", commitSHA[:8])
 
 	// Check if the commit has a conversation note
 	if !git.HasNote(commitSHA) {
@@ -66,10 +71,14 @@ func runResume(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("could not read conversation note: %w", err)
 	}
 
+	cli.LogDebug("resume: note size is %d bytes", len(noteContent))
+
 	stored, err := storage.UnmarshalStoredConversation(noteContent)
 	if err != nil {
 		return fmt.Errorf("could not parse stored conversation: %w", err)
 	}
+
+	cli.LogDebug("resume: session=%s branch=%s messages=%d", stored.SessionID, stored.GitBranch, stored.MessageCount)
 
 	// Verify integrity
 	valid, err := stored.VerifyIntegrity()
