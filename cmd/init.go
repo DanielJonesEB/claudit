@@ -110,7 +110,7 @@ func ensureGitignoreEntry(repoRoot, entry string) error {
 
 	// Check if the entry already exists
 	if f, err := os.Open(gitignorePath); err == nil {
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			if strings.TrimSpace(scanner.Text()) == entry {
@@ -125,7 +125,7 @@ func ensureGitignoreEntry(repoRoot, entry string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Ensure we start on a new line if the file doesn't end with one
 	info, err := f.Stat()
@@ -136,12 +136,15 @@ func ensureGitignoreEntry(repoRoot, entry string) error {
 	if info.Size() > 0 {
 		// Read last byte to check for trailing newline
 		buf := make([]byte, 1)
-		rf, _ := os.Open(gitignorePath)
-		rf.Seek(-1, 2)
-		rf.Read(buf)
-		rf.Close()
-		if buf[0] != '\n' {
-			prefix = "\n"
+		if rf, err := os.Open(gitignorePath); err == nil {
+			if _, err := rf.Seek(-1, 2); err == nil {
+				if _, err := rf.Read(buf); err == nil {
+					if buf[0] != '\n' {
+						prefix = "\n"
+					}
+				}
+			}
+			_ = rf.Close()
 		}
 	}
 
