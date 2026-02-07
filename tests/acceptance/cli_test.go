@@ -16,7 +16,7 @@ var _ = Describe("CLI Foundation", func() {
 			stdout, _, err := testutil.RunClaudit()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout).To(ContainSubstring("Usage:"))
-			Expect(stdout).To(ContainSubstring("Available Commands:"))
+			Expect(stdout).To(ContainSubstring("Commands for humans:"))
 		})
 	})
 
