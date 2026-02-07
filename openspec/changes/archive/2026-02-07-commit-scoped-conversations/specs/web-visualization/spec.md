@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Incremental API Parameter
 The conversation detail API SHALL support an `incremental` query parameter.
@@ -23,32 +23,16 @@ The conversation detail API SHALL support an `incremental` query parameter.
 - **AND** `parent_commit_sha` is empty
 
 ### Requirement: Response Schema Extension
-The conversation response SHALL include incremental display metadata.
+The conversation response SHALL include incremental display metadata including `is_incremental`, `parent_commit_sha`, and `incremental_count` fields.
 
-#### Schema: ConversationResponse
-```json
-{
-  "sha": "string",
-  "session_id": "string",
-  "timestamp": "string",
-  "message_count": "number",
-  "transcript": "array",
-  "is_incremental": "boolean",
-  "parent_commit_sha": "string (optional)",
-  "incremental_count": "number (entries in this increment)"
-}
-```
+#### Scenario: Incremental response includes metadata
+- **WHEN** the API returns an incremental conversation response
+- **THEN** the response includes `is_incremental: true`, `parent_commit_sha`, and `incremental_count`
 
-### Requirement: UI Toggle ✓ IMPLEMENTED
-The web UI SHOULD provide a toggle to switch between incremental and full view.
+### Requirement: UI Toggle
+The web UI SHALL provide a toggle to switch between incremental and full conversation view.
 
 #### Scenario: Toggle incremental/full
 - **WHEN** user views a conversation in the web UI
 - **THEN** a toggle is available to switch between incremental and full view
 - **AND** incremental is the default when parent conversation exists
-
-#### Implementation Notes
-- Toggle buttons ("This Commit" / "Full Session") appear in the conversation header
-- Toggle is only visible when a parent conversation exists
-- Incremental view shows entry count and clickable link to parent commit
-- Full view shows total session entry count

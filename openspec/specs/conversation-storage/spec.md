@@ -1,0 +1,106 @@
+# conversation-storage Specification
+
+## Purpose
+Captures Claude Code conversation transcripts, compresses them, and stores them as Git Notes attached to commits.
+## Requirements
+### Requirement: Hook handler for commit detection
+The `claudit store` command MUST process PostToolUse hook events and detect git commits.
+
+#### Scenario: Detect git commit command
+- Given Claude Code executed a Bash command
+- When the hook JSON indicates `tool_input.command` contains `git commit`
+- Then claudit proceeds to store the conversation
+
+#### Scenario: Ignore non-commit commands
+- Given Claude Code executed a Bash command
+- When the hook JSON indicates a command that is not `git commit`
+- Then claudit exits silently with status 0
+
+#### Scenario: Handle malformed hook input
+- Given claudit receives invalid JSON on stdin
+- When processing the hook
+- Then claudit logs a warning and exits with status 0
+- And does not disrupt the user's workflow
+
+### Requirement: Read Claude Code transcript
+The store command MUST read the JSONL transcript from the path provided by the hook.
+
+#### Scenario: Read transcript from hook-provided path
+- Given the hook JSON contains `transcript_path`
+- When claudit processes the hook
+- Then claudit reads the JSONL file at that path
+
+#### Scenario: Handle missing transcript file
+- Given the hook JSON contains a `transcript_path` that doesn't exist
+- When claudit processes the hook
+- Then claudit logs a warning and exits with status 0
+
+### Requirement: Parse JSONL transcript format
+The storage module MUST correctly parse Claude Code's JSONL transcript format.
+
+#### Scenario: Parse user message entry
+- Given a JSONL line with `"type": "user"`
+- When parsing the transcript
+- Then claudit extracts uuid, parentUuid, timestamp, and message content
+
+#### Scenario: Parse assistant message entry
+- Given a JSONL line with `"type": "assistant"`
+- When parsing the transcript
+- Then claudit extracts the message content blocks (text, thinking, tool_use)
+
+#### Scenario: Parse tool result entry
+- Given a JSONL line with `"type": "user"` and `tool_result` content
+- When parsing the transcript
+- Then claudit links it to the source tool_use via `sourceToolAssistantUUID`
+
+#### Scenario: Handle unknown entry types gracefully
+- Given a JSONL line with an unrecognized type
+- When parsing the transcript
+- Then claudit preserves the raw JSON for future compatibility
+
+### Requirement: Compress and encode transcript
+Transcripts MUST be compressed and encoded for efficient storage in git notes.
+
+#### Scenario: Compress with gzip
+- Given a JSONL transcript
+- When storing the conversation
+- Then the transcript is compressed using gzip
+
+#### Scenario: Encode as base64
+- Given compressed transcript data
+- When storing the conversation
+- Then the data is encoded as base64 for safe text embedding
+
+### Requirement: Store as Git Note
+The compressed transcript MUST be stored as a Git Note attached to the commit using the custom ref `refs/notes/claude-conversations`.
+
+#### Scenario: Create git note on custom ref
+- **WHEN** storing a conversation for a commit
+- **THEN** claudit attaches the note using `refs/notes/claude-conversations`
+- **AND** the note does NOT appear on the default `refs/notes/commits` ref
+
+#### Scenario: Notes invisible in default git log
+- **WHEN** a commit has a claudit note attached
+- **AND** the user runs `git log`
+- **THEN** the note content is NOT displayed
+
+### Requirement: Compute integrity checksum
+A checksum MUST be stored to verify transcript integrity on retrieval.
+
+#### Scenario: SHA256 checksum of original transcript
+- Given a JSONL transcript
+- When storing the conversation
+- Then the checksum is computed from the original (uncompressed) transcript
+- And stored in the format `sha256:<hex>`
+
+### Requirement: Read notes from custom ref
+Note retrieval operations MUST use the custom ref `refs/notes/claude-conversations`.
+
+#### Scenario: List commits with notes
+- **WHEN** running `claudit list`
+- **THEN** claudit reads notes from `refs/notes/claude-conversations`
+
+#### Scenario: Resume from commit
+- **WHEN** running `claudit resume <commit>`
+- **THEN** claudit reads the note from `refs/notes/claude-conversations`
+

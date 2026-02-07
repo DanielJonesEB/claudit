@@ -17,6 +17,8 @@ The compressed transcript MUST be stored as a Git Note attached to the commit us
 - **AND** the user runs `git log`
 - **THEN** the note content is NOT displayed
 
+## ADDED Requirements
+
 ### Requirement: Read notes from custom ref
 Note retrieval operations MUST use the custom ref `refs/notes/claude-conversations`.
 

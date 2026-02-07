@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Incremental Conversation Display
 The `show` command SHALL display only conversation entries since the last commit by default.
