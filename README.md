@@ -68,4 +68,4 @@ To view notes directly with git: `git log --notes=claude-conversations`
 
 ## License
 
-See LICENSE file.
+See [LICENSE](LICENSE).
